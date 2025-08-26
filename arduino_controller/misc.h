@@ -6,6 +6,7 @@ bool readButton();
 void singSuccess();
 void singFailure();
 void singAlert();
+int read_potentiometer();
 
 
 #endif
