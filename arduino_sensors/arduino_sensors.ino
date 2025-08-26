@@ -2,6 +2,7 @@
 #include "constants.h"
 #include "sensors.h"
 #include "actuators.h"
+#include "buzzer.h"
 
 /// Constants
 
