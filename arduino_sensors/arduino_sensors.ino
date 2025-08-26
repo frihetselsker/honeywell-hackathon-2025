@@ -3,58 +3,64 @@
 #include "sensors.h"
 #include "actuators.h"
 #include "buzzer.h"
+#include "comm.h"
+#include <AceRoutine.h>
+using namespace ace_routine;
 
-/// Constants
+// COROUTINE(commTask) {
+//   COROUTINE_LOOP() {
+//     COROUTINE_AWAIT(link.available() > 0);
 
-unsigned long lastSend = 0;
-const unsigned long period = 1000; // send once per second
+//     // TODO: Write the async reader
+//   }
+// }
 
-/// Static variables
+COROUTINE(gasTask) {
+  COROUTINE_LOOP() {
+    int gas_value = readGas();
+    COROUTINE_DELAY(300);
+    Serial.print("Gas: ");
+    Serial.println(gas_value);
+    COROUTINE_YIELD();
+  }
+}
 
-SoftwareSerial mySerial(RX_PIN, TX_PIN); // RX=12, TX=13
+COROUTINE(noiseTask) {
+  COROUTINE_LOOP() {
+    int noise_value = readNoise();
+    COROUTINE_DELAY(300);
+    Serial.print("Noise: ");
+    Serial.println(noise_value);
+    COROUTINE_YIELD();
+  }
+}
 
-
-int pos = 0;    // variable to store the servo position
+COROUTINE(DHTTask) {
+  COROUTINE_LOOP() {
+    float temp_value = readTemperature();
+    float hum_value = readHumidity();
+    COROUTINE_DELAY(300);
+    Serial.print("Temeperature: ");
+    Serial.print(temp_value, 2);
+    Serial.print("Humidity: ");
+    Serial.println(hum_value, 2);
+    COROUTINE_YIELD();
+  }
+}
 
 
 // put your setup code here, to run once:
 
 void setup() {
   Serial.begin(9600);
-  mySerial.begin(BAUD_RATE);
-  mySerial.setTimeout(50);     // faster reads if newline missing
   Serial.println("A: ready");
   initActuators();
+
+  CoroutineScheduler::setup();
 }
 
 // put your main code here, to run repeatedly:
 
 void loop() {
-
-  // send a line every second
-  if (millis() - lastSend >= period) {
-    lastSend = millis();
-    mySerial.println("PING from A");   // NOTE: println adds '\n'
-    Serial.println("A: sent -> PING from A");
-  }
-
-  // read any reply from B
-  if (mySerial.available() > 0) {
-    String msg = mySerial.readStringUntil('\n');
-    msg.trim(); // remove any \r
-    Serial.print("A: got <- ");
-    Serial.println(msg);
-  }
-
-  float gasValue = readGas();
-  float noiseValue = readNoise();   
-  Serial.print("The value of the gas sensor ");
-  Serial.println(gasValue);
-  Serial.print("The value of the noise sensor ");
-  Serial.println(noiseValue);
-  Serial.print("Humidity (%): ");
-  Serial.println(readHumidity(), 2);
-  Serial.print("Temperature  (C): ");
-  Serial.println(readTemperature(), 2);
-  delay(200);    
+   CoroutineScheduler::loop();
 }

@@ -7,9 +7,9 @@
 
 static LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-const char correctPIN[] = "1818";
-char enteredPIN[5];   // 4 chars + '\0'
-byte pinIndex = 0;
+const char correct_PIN[] = "1818";
+char entered_PIN[5];   // 4 chars + '\0'
+byte pinndex = 0;
 
 
 //!!! WE NEED TO FIX IT !!!
@@ -113,13 +113,13 @@ void showPrompt() {
 
 void showStars() {
   lcd.setCursor(6, 1);
-  for (byte i = 0; i < pinIndex; i++) lcd.print('*');
-  for (byte i = pinIndex; i < 4; i++) lcd.print(' ');
-  lcd.setCursor(6 + pinIndex, 1);
+  for (byte i = 0; i < pinndex; i++) lcd.print('*');
+  for (byte i = pinndex; i < 4; i++) lcd.print(' ');
+  lcd.setCursor(6 + pinndex, 1);
 }
 
 void resetEntry() {
-  pinIndex = 0;
+  pinndex = 0;
   showStars();
 }
 
@@ -135,21 +135,22 @@ void checkPassword() {
 
   // '#' works like backspace
   if (key == '#') {
-    if (pinIndex > 0) pinIndex--;
+    if (pinndex > 0) pinndex--;
     showStars();
     return;
   }
 
   // Accept digits 0-9 and A-D
   if ((key >= '0' && key <= '9') || (key >= 'A' && key <= 'D')) {
-    if (pinIndex < 4) {
-      enteredPIN[pinIndex] = key;
-      pinIndex++;
+    if (pinndex < 4) {
+      entered_PIN[pinndex] = key;
+      pinndex++;
       showStars();
 
-      if (pinIndex == 4) {
-        enteredPIN[4] = '\0';
-        bool ok = (strcmp(enteredPIN, correctPIN) == 0);
+      if (pinndex == 4) {
+        entered_PIN[4] = '\0';
+        bool ok = (strcmp(entered_PIN, correct_
+        PIN) == 0);
         successScreen(ok);
         resetEntry();
       }

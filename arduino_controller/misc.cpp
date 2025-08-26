@@ -41,7 +41,7 @@ void singAlert() {
   noTone(BUZZER_PIN);            // Stop buzzer
 }
 
-int read_potentiometer() {
+int readPotentiometer() {
   int potent_reading = analogRead(POTEN_PIN);
 
   Serial.println(potent_reading);
