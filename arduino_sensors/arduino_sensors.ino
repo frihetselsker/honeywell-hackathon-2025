@@ -11,7 +11,7 @@ const unsigned long period = 1000; // send once per second
 
 /// Static variables
 
-SoftwareSerial mySerial(12, 13); // RX=12, TX=13
+SoftwareSerial mySerial(RX_PIN, TX_PIN); // RX=12, TX=13
 
 
 int pos = 0;    // variable to store the servo position

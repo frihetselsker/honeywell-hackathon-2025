@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include "buzzer.h"
 #include "constants.h"
 #include "melody.h"  // contains the melody[] array and tempo

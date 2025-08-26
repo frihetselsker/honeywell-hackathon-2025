@@ -1,6 +1,8 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
+#include <Arduino.h>
+
 // Sensor pins
 inline constexpr int GAS_PIN   = A0;
 inline constexpr int NOISE_PIN = A1;
@@ -13,5 +15,7 @@ inline constexpr int BUZZER_PIN  = 7;  // TBD
 
 // Serial communication
 inline constexpr long BAUD_RATE = 9600;
+inline constexpr int RX_PIN = 12;
+inline constexpr int TX_PIN = 13;
 
 #endif
