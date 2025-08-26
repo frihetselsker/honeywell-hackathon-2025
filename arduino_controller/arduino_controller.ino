@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "misc.h"
 #include "constants.h"
 #include <SoftwareSerial.h>
 SoftwareSerial mySerial(12, 13); // RX=12, TX=13

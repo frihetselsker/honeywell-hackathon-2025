@@ -16,5 +16,4 @@ void printCentered(const char* text, unsigned int row);
 void checkPassword();
 void successScreen(bool ok);
 
-
 #endif
