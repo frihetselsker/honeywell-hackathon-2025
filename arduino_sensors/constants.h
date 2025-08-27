@@ -11,7 +11,7 @@ inline constexpr int DHT_PIN   = 4;
 // Actuators
 inline constexpr int SERVO_PIN   = 5;
 inline constexpr int COOLER_PIN  = 6;
-inline constexpr int BUZZER_PIN  = 7;  // TBD
+inline constexpr int BUZZER_PIN  = 3;
 
 // Serial communication
 inline constexpr long BAUD_RATE = 9600;

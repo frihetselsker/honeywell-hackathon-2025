@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 
+extern int wholenote;
+
 void initBuzzer();
 void playMelody();
 
