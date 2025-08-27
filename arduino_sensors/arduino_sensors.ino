@@ -22,9 +22,10 @@ static bool is_buzzer_on = false;
 
 COROUTINE(gasTask) {
   COROUTINE_LOOP() {
+    gasValue = readGas();
     COROUTINE_DELAY(300);
     Serial.print("Gas: ");
-    Serial.println(readGas());
+    Serial.println(gasValue);
     COROUTINE_YIELD();
   }
 }
@@ -125,20 +126,30 @@ COROUTINE(DHTTask) {
 
 COROUTINE(commTask) {
   COROUTINE_LOOP() {
-    // COROUTINE_AWAIT(link.available() > 0);
-    // String cmd = link.readStringUntil('\n');
-    // Serial.println("Got a message");
-    // Serial.println(cmd);
-    Serial.println("Sending a message");
+    // Check if there's a request from the controller
+     COROUTINE_AWAIT(link.available() > 0);
+      String cmd = link.readStringUntil('\n');
+      cmd.trim();
+      Serial.print("Received command: ");
+      Serial.println(cmd);
+      
+      if (cmd == "REQ") {
+        // Send sensor data in response to request
+        Serial.println("Sending sensor data...");
+        link.print("GAS:");
+        link.print(gasValue);
+        link.print(",NOISE:"); 
+        link.print(noiseValue);
+        link.print(",TEMP:"); 
+        link.print(tempValue, 2); 
+        link.print(",HUM:"); 
+        link.println(humValue, 2);
+      }
+    }
     
-    link.print("GAS:");
-    link.print(gasValue);
-    link.print(",NOISE:"); link.print(noiseValue);
-    link.print(",TEMP:"); link.print(tempValue, 2); 
-    link.print(",HUM:"); link.println(humValue, 2);
-    COROUTINE_DELAY(500);
+    // Small delay to avoid CPU hogging
+    COROUTINE_YIELD();
   }
-}
 
 // put your setup code here, to run once:
 
