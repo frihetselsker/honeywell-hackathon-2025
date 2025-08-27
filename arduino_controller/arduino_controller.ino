@@ -15,7 +15,7 @@ COROUTINE(commTask) {
     String cmd = link.readStringUntil('\n');
     Serial.println("Got a message");
     Serial.println(cmd);
-    COROUTINE_DELAY(100);
+    COROUTINE_DELAY(500);
   }
 }
 
@@ -39,7 +39,6 @@ void loop() {
   //   mySerial.println("ACK from B");
   //   Serial.println("B: sent -> ACK from B");
   // }
-  //mySerial.println("ACK from B");
   //delay(1000);
   //read_potentiometer();
   //checkPassword();
