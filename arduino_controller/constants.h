@@ -16,7 +16,7 @@ inline constexpr byte ROWS = 4;
 inline constexpr byte COLS = 4;
 
 // Buzzer
-inline constexpr int BUZZER_PIN = 3;
+inline constexpr int BUZZER_PIN = 6;
 
 // LCD
 inline constexpr int LCD_SDA = A4;

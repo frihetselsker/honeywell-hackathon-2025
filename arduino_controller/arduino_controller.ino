@@ -57,6 +57,7 @@ void setup() {
   setRGB(255, 255, 255);  // Set RGB to red
   Serial.begin(9600);
   Serial.println("B: ready");
+  singAlert();
   CoroutineScheduler::setup();
 }
 
