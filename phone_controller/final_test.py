@@ -183,7 +183,7 @@ if __name__ == "__main__":
             data = parse_metrics(line)
 
             if data:
-                # Send the first parsed payload so you can verify end-to-end
+                # Send the first parsed payload so you can verify end-to-ends
                 if not first_payload_sent:
                     send(f"📡 First data: {data}")
                     first_payload_sent = True
