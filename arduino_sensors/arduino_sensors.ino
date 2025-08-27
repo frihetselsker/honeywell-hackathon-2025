@@ -18,14 +18,16 @@ static float humValue = 0.0;
 static int distance = 0;
 
 static bool is_buzzer_on = false;
+static bool is_window_open = false;
+static bool is_cooler_on = false;
 
 
 COROUTINE(gasTask) {
   COROUTINE_LOOP() {
     gasValue = readGas();
-    COROUTINE_DELAY(300);
-    Serial.print("Gas: ");
-    Serial.println(gasValue);
+    COROUTINE_DELAY(2000);
+    // Serial.print("Gas: ");
+    // Serial.println(gasValue);
     COROUTINE_YIELD();
   }
 }
@@ -33,7 +35,7 @@ COROUTINE(gasTask) {
 
 COROUTINE(distanceTask) {
   COROUTINE_LOOP() {
-    COROUTINE_DELAY(300);
+    COROUTINE_DELAY(3000);
     Serial.print("Distance: ");
     Serial.println(readDistance());
     COROUTINE_YIELD();
@@ -103,26 +105,50 @@ COROUTINE(buzzerTask) {
 
 COROUTINE(noiseTask) {
   COROUTINE_LOOP() {
+    static unsigned long lastTriggerTime = 0;   // Time of last loud noise
+    const unsigned long holdTime = 5000;        // Keep buzzer on for 5s after trigger
+
     noiseValue = readNoise();
     COROUTINE_DELAY(300);
+
     Serial.print("Noise: ");
     Serial.println(noiseValue);
+
+    if (noiseValue > 139) {
+      lastTriggerTime = millis();   // update trigger moment
+      is_buzzer_on = true;
+    } else {
+      // check if we are still inside the hold window
+      if (millis() - lastTriggerTime < holdTime) {
+        is_buzzer_on = true;
+      } else {
+        is_buzzer_on = false;
+      }
+    }
+
     COROUTINE_YIELD();
   }
 }
+
 
 COROUTINE(DHTTask) {
   COROUTINE_LOOP() {
     tempValue = readTemperature();
     humValue = readHumidity();
-    COROUTINE_DELAY(300);
-    Serial.print("Temeperature: ");
-    Serial.print(tempValue, 2);
-    Serial.print("Humidity: ");
-    Serial.println(humValue, 2);
+    COROUTINE_DELAY(3000);
+    // Serial.print("Temeperature: ");
+    // Serial.print(tempValue, 2);
+    // Serial.print("Humidity: ");
+    // Serial.println(humValue, 2);
     COROUTINE_YIELD();
   }
 }
+
+// COROUTINE(actuatorTask) {
+//   COROUTINE_LOOP() {
+
+//   }
+// }
 
 COROUTINE(commTask) {
   COROUTINE_LOOP() {
@@ -130,12 +156,12 @@ COROUTINE(commTask) {
      COROUTINE_AWAIT(link.available() > 0);
       String cmd = link.readStringUntil('\n');
       cmd.trim();
-      Serial.print("Received command: ");
-      Serial.println(cmd);
+      //Serial.print("Received command: ");
+      // Serial.println(cmd);
       
       if (cmd == "REQ") {
         // Send sensor data in response to request
-        Serial.println("Sending sensor data...");
+        // Serial.println("Sending sensor data...");
         link.print("GAS:");
         link.print(gasValue);
         link.print(",NOISE:"); 
