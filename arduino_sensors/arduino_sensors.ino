@@ -18,16 +18,19 @@ static float humValue = 0.0;
 static int distance = 0;
 
 static bool is_buzzer_on = false;
-static bool is_window_open = false;
-static bool is_cooler_on = false;
 
 
 COROUTINE(gasTask) {
   COROUTINE_LOOP() {
     gasValue = readGas();
-    COROUTINE_DELAY(2000);
+    COROUTINE_DELAY(200);
     // Serial.print("Gas: ");
     // Serial.println(gasValue);
+    if (gasValue > 100) {
+      is_window_open = true;
+    } else {
+      is_window_open = false;
+    }
     COROUTINE_YIELD();
   }
 }
@@ -114,7 +117,7 @@ COROUTINE(noiseTask) {
     Serial.print("Noise: ");
     Serial.println(noiseValue);
 
-    if (noiseValue > 139) {
+    if (noiseValue > 142) {
       lastTriggerTime = millis();   // update trigger moment
       is_buzzer_on = true;
     } else {
@@ -144,11 +147,33 @@ COROUTINE(DHTTask) {
   }
 }
 
-// COROUTINE(actuatorTask) {
-//   COROUTINE_LOOP() {
+COROUTINE(actuatorTask) {
+  COROUTINE_LOOP() {
+    // if (is_window_open && window_pos == 90) {
+    //     for (window_pos = 90; window_pos >= 0; window_pos--) { // goes from 0 degrees to 180 degrees
+    //         window.write(window_pos);              // tell servo to go to position in variable 'window_pos'
+    //         delay(15);                       // waits 15ms for the servo to reach the position
+    //     }
+    // } else if (!is_window_open && window_pos == 0) {
+    //     for (window_pos = 0; window_pos <= 90; window_pos++) { // goes from 180 degrees to 0 degrees
+    //         window.write(window_pos);              // tell servo to go to position in variable 'window_pos' 
+    //         delay(15);                       // waits 15ms for the servo to reach the position
+    //     }
+    // }
 
-//   }
-// }
+    if (gasValue > 100 && !is_cooler_on) {
+      Serial.println("Let's save planet from global warming");
+      toggleCooler();
+
+    } else if (gasValue > 100 && is_cooler_on) {
+      Serial.println("Still working");
+    } else if (gasValue < 100 && is_cooler_on){
+      toggleCooler();
+    }
+    COROUTINE_DELAY(1000);
+    COROUTINE_YIELD();
+  }
+}
 
 COROUTINE(commTask) {
   COROUTINE_LOOP() {

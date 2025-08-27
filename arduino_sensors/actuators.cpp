@@ -12,22 +12,22 @@ static bool is_cooler_on = false;
 void initActuators() {
   window.attach(SERVO_PIN);
   pinMode(COOLER_PIN, OUTPUT);
-  analogWrite(COOLER_PIN, 0); // Full speed
+  analogWrite(COOLER_PIN, 0); // Disabled
 }
 
 void toggleWidnow() {
-    if (is_window_open) {
+    if (is_window_open && window_pos == 90) {
         for (window_pos = 90; window_pos >= 0; window_pos--) { // goes from 0 degrees to 180 degrees
             window.write(window_pos);              // tell servo to go to position in variable 'window_pos'
             delay(15);                       // waits 15ms for the servo to reach the position
         }
-    } else {
+    } else if (!is_window_open && window_pos == 0) {
         for (window_pos = 0; window_pos <= 90; window_pos++) { // goes from 180 degrees to 0 degrees
             window.write(window_pos);              // tell servo to go to position in variable 'window_pos' 
             delay(15);                       // waits 15ms for the servo to reach the position
         }
     }
-    is_window_open = !is_window_open;
+    //is_window_open = !is_window_open;
 }
 
 void toggleCooler() {
