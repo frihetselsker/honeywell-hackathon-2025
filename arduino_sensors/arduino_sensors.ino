@@ -22,10 +22,23 @@ static bool is_buzzer_on = false;
 
 COROUTINE(commTask) {
   COROUTINE_LOOP() {
-    COROUTINE_AWAIT(link.available() > 0);
-    String cmd = link.readStringUntil('\n');
-    Serial.println("Got a message");
-    Serial.println(cmd);
+    //COROUTINE_AWAIT(link.available() > 0);
+    //String cmd = link.readStringUntil('\n');
+    //Serial.println("Got a message");
+    //Serial.println(cmd);
+    Serial.println("Sending a message");
+    link.print("GAS:");
+    Serial.print("GAS:");
+    delay(50); 
+    link.print(gasValue);
+    delay(50); 
+    link.print(",NOISE:"); link.print(noiseValue);
+    delay(50); 
+    link.print(",TEMP:"); link.print(tempValue, 2);
+    delay(50); 
+    link.print(",HUM:"); link.println(humValue, 2);
+    delay(50); 
+    COROUTINE_DELAY(100);
   }
 }
 
@@ -140,6 +153,7 @@ void setup() {
   Serial.begin(9600);
   Serial.println("A: ready");
   initActuators();
+  initComms();
   initSensors();
   initBuzzer();
   CoroutineScheduler::setup();

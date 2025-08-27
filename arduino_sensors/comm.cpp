@@ -12,7 +12,9 @@ void initComms() {
 
 // Push sensor data to channel and send via SoftwareSerial
 void sendSensorData(int gas, int noise, float temp, float hum) {
-    link.print("GAS:"); link.print(gas);
+    Serial.println("Sending a message");
+    link.print("GAS:"); 
+    link.print(gas);
     link.print(",NOISE:"); link.print(noise);
     link.print(",TEMP:"); link.print(temp, 2);
     link.print(",HUM:"); link.println(hum, 2);
