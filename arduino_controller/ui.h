@@ -1,6 +1,10 @@
 #ifndef UI_H
 #define UI_H
 
+#include <LiquidCrystal_I2C.h>
+
+extern LiquidCrystal_I2C lcd;
+
 // UI-related functions
 void initUI();
 void showWelcomeMessage();
@@ -12,7 +16,7 @@ void clearLCD();
 void showPrompt();
 void showStars();
 void resetEntry();
-void printCentered(const char* text, unsigned int row);
+void printCentered(String text, unsigned int row);
 void checkPassword();
 void successScreen(bool ok);
 

@@ -189,7 +189,7 @@ COROUTINE(commTask) {
         link.print(",COOLER:");
         link.print(is_cooler_on);
         link.print(",BUZZER:");
-        link.print(is_buzzer_on);
+        link.println(is_buzzer_on);
       } else if (cmd == "TOGGLE_WINDOW") {
         toggleWindow();
       } else if (cmd == "TOGGLE_COOLER") {

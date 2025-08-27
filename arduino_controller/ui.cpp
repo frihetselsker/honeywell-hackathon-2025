@@ -41,10 +41,8 @@ void initUI() {
 
 void showWelcomeMessage() {
   lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("Smart System");
-  lcd.setCursor(0, 1);
-  lcd.print("Controller Ready");
+  printCentered("BandX", 0);
+  printCentered("Watch Ready", 1);
   delay(2000);
   lcd.clear();
 }
@@ -84,8 +82,8 @@ void showMessage(String line1, String line2) {
   lcd.print(line2);
 }
 
-void printCentered(const char* text, unsigned int row) {
-  int len = strlen(text);
+void printCentered(String text, unsigned int row) {
+  int len = text.length();
   int col = (16 - len) / 2;   // center for 16 chars per row
   if (col < 0) col = 0;       // in case text is longer than 16
   lcd.setCursor(col, row);
