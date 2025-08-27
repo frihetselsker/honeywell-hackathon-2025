@@ -7,10 +7,10 @@
 #include <SoftwareSerial.h>
 
 using namespace ace_routine;
-SoftwareSerial link(12, 13); // RX=12, TX=13
 
 COROUTINE(commTask) {
   COROUTINE_LOOP() {
+    Serial.println("At comm task");
     COROUTINE_AWAIT(link.available() > 0);
     String cmd = link.readStringUntil('\n');
     Serial.println("Got a message");
@@ -24,8 +24,6 @@ void setup() {
   initComms();
   initMisc();
   Serial.begin(9600);
-  link.begin(9600);
-  link.setTimeout(50);
   Serial.println("B: ready");
   CoroutineScheduler::setup();
 }

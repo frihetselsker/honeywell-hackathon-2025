@@ -6,6 +6,7 @@ static SoftwareSerial link(RX_PIN, TX_PIN); // RX, TX pins (adjust as needed)
 
 void initComms() {
   link.begin(BAUD_RATE);
+  link.setTimeout(300); // Set timeout for reading
 }
 
 void requestSensorData() {
