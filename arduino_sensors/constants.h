@@ -7,6 +7,8 @@
 inline constexpr int GAS_PIN   = A0;
 inline constexpr int NOISE_PIN = A1;
 inline constexpr int DHT_PIN   = 4;
+inline constexpr int TRIG_PIN = 8;
+inline constexpr int ECHO_PIN = 9;
 
 // Actuators
 inline constexpr int SERVO_PIN   = 5;

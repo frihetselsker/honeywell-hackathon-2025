@@ -15,15 +15,20 @@ static int gasValue = 0;
 static int noiseValue = 0;
 static float tempValue = 0.0;
 static float humValue = 0.0;
+static int distance = 0;
+
+static bool is_buzzer_on = false;
 
 
-// COROUTINE(commTask) {
-//   COROUTINE_LOOP() {
-//     COROUTINE_AWAIT(link.available() > 0);
+COROUTINE(commTask) {
+  COROUTINE_LOOP() {
+    COROUTINE_AWAIT(link.available() > 0);
+    String cmd = link.readStringUntil('\n');
+    Serial.println("Got a message");
+    Serial.println(cmd);
+  }
+}
 
-//     // TODO: Write the async reader
-//   }
-// }
 
 COROUTINE(gasTask) {
   COROUTINE_LOOP() {
@@ -34,57 +39,75 @@ COROUTINE(gasTask) {
   }
 }
 
+
+COROUTINE(distanceTask) {
+  COROUTINE_LOOP() {
+    COROUTINE_DELAY(300);
+    Serial.print("Distance: ");
+    Serial.println(readDistance());
+    COROUTINE_YIELD();
+  }
+}
+
+
+
 COROUTINE(buzzerTask) {
   COROUTINE_LOOP() {
     // Static variables to maintain state between resumptions
     static int thisNote = 0;
     static unsigned long nextNoteTime = 0;
     static bool playingNote = false;
-    
-    // Check if we're finished with the melody
-    if (thisNote >= melodyLength) {
-      thisNote = 0; // Reset to beginning
-      COROUTINE_DELAY(2000); // Wait before repeating
-      return;
+    if (is_buzzer_on) {
+          // Check if we're finished with the melody
+        if (thisNote >= melodyLength) {
+          thisNote = 0; // Reset to beginning
+          COROUTINE_DELAY(2000); // Wait before repeating
+          return;
+        }
+        
+        // Print current note for debugging
+        Serial.print("Note: ");
+        Serial.println(thisNote/2); // Divide by 2 to show actual note count
+        
+        // Get the pitch and duration
+        int pitch = pgm_read_word_near(melody + thisNote);
+        int divider = pgm_read_word_near(melody + thisNote + 1);
+        
+        // Calculate duration
+        int noteDuration;
+        if (divider > 0) {
+          noteDuration = wholenote / divider;
+        } else if (divider < 0) {
+          noteDuration = wholenote / abs(divider);
+          noteDuration *= 1.5; // dotted notes
+        } else {
+          noteDuration = 0;
+        }
+        
+        // Start playing the note
+        if (pitch != REST && noteDuration > 0) {
+          tone(BUZZER_PIN, pitch, noteDuration * 0.9);
+        }
+        Serial.println("Buzzer reached");
+        
+        // Use COROUTINE_DELAY for non-blocking wait
+        COROUTINE_DELAY(noteDuration);
+        
+        // Stop the tone and prepare for next note
+        noTone(BUZZER_PIN);
+        
+        // Move to next note (step by 2 for pitch,duration pairs)
+        thisNote += 2;
+        
+        // Small delay between notes
+        COROUTINE_DELAY(50);
+      } else {
+        // If buzzer is off, ensure no tone is playing and reset state
+        noTone(BUZZER_PIN);
+        thisNote = 0; // Reset to beginning for next time
+        COROUTINE_DELAY(100); // Avoid busy-waiting
+      }
     }
-    
-    // Print current note for debugging
-    Serial.print("Note: ");
-    Serial.println(thisNote/2); // Divide by 2 to show actual note count
-    
-    // Get the pitch and duration
-    int pitch = pgm_read_word_near(melody + thisNote);
-    int divider = pgm_read_word_near(melody + thisNote + 1);
-    
-    // Calculate duration
-    int noteDuration;
-    if (divider > 0) {
-      noteDuration = wholenote / divider;
-    } else if (divider < 0) {
-      noteDuration = wholenote / abs(divider);
-      noteDuration *= 1.5; // dotted notes
-    } else {
-      noteDuration = 0;
-    }
-    
-    // Start playing the note
-    if (pitch != REST && noteDuration > 0) {
-      tone(BUZZER_PIN, pitch, noteDuration * 0.9);
-    }
-    Serial.println("Buzzer reached");
-    
-    // Use COROUTINE_DELAY for non-blocking wait
-    COROUTINE_DELAY(noteDuration);
-    
-    // Stop the tone and prepare for next note
-    noTone(BUZZER_PIN);
-    
-    // Move to next note (step by 2 for pitch,duration pairs)
-    thisNote += 2;
-    
-    // Small delay between notes
-    COROUTINE_DELAY(50);
-  }
 }
 
 COROUTINE(noiseTask) {
@@ -117,6 +140,7 @@ void setup() {
   Serial.begin(9600);
   Serial.println("A: ready");
   initActuators();
+  initSensors();
   initBuzzer();
   CoroutineScheduler::setup();
 }
