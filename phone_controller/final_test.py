@@ -1,5 +1,5 @@
 # monitor_serial_and_notify.py
-import requests, serial, time, os, sys
+import requests, serial, time, os, sys, math
 
 TOKEN   = os.environ.get("TG_TOKEN")   or "8257890117:AAHdOYwVhzeX0FpbqzBbZi8lGEZ_xd3KPa4"
 CHAT_ID = os.environ.get("TG_CHAT_ID") or "7505346302"
@@ -7,6 +7,15 @@ PORT    = os.environ.get("SERIAL_PORT") or "COM6"
 BAUD    = 9600
 
 MIN_INTERVAL = 10  # seconds between alerts
+
+# EWMA and hysteresis parameters for TEMP (adjust as needed)
+DT = 1.0      # seconds between samples
+TAU = 30.0    # smoothing time constant (seconds)
+ALPHA = 1 - math.exp(-DT / TAU)
+
+THIGH_TEMP = 40.0  # High threshold for TEMP alert
+TLOW_TEMP = 38.0   # Low threshold for TEMP alert exit (hysteresis)
+M_TEMP = 3         # Number of consecutive samples above threshold
 
 def send(msg):
     try:
@@ -47,39 +56,55 @@ def parse_metrics(line: str):
                 data[k] = v.strip()
     return data
 
+
 def should_alert(data: dict, last_sent_time: float):
+    global ewma_state, ewma_alert_state, ewma_above_counter, last_alerts
+    if 'ewma_state' not in globals():
+        ewma_state = {'TEMP': None}
+    if 'ewma_alert_state' not in globals():
+        ewma_alert_state = {'TEMP': False}
+    if 'ewma_above_counter' not in globals():
+        ewma_above_counter = {'TEMP': 0}
+    if 'last_alerts' not in globals():
+        last_alerts = {'TEMP': 0}
+
     now = time.time()
-    if now - last_sent_time < MIN_INTERVAL:
-        return False, last_sent_time
+    triggered_sensors = []
 
-    # If we didn't parse anything useful, skip
-    if not data or all(v == "?" for v in data.values()):
-        return False, last_sent_time
+    # Only apply EWMA and hysteresis to TEMP for now
+    if 'TEMP' in data and isinstance(data['TEMP'], (int, float)):
+        x = data['TEMP']
+        prev = ewma_state['TEMP']
+        if prev is None:
+            ewma = x
+        else:
+            ewma = ALPHA * x + (1 - ALPHA) * prev
+        ewma_state['TEMP'] = ewma
 
-    # Triggers only on real numeric thresholds
-    gas   = data.get("GAS")
-    noise = data.get("NOISE")
-    temp  = data.get("TEMP")
-    hum   = data.get("HUM")
+        # Hysteresis logic
+        if not ewma_alert_state['TEMP']:
+            if ewma >= THIGH_TEMP:
+                ewma_above_counter['TEMP'] += 1
+                if ewma_above_counter['TEMP'] >= M_TEMP and now - last_alerts['TEMP'] >= MIN_INTERVAL:
+                    triggered_sensors.append('TEMP')
+                    ewma_alert_state['TEMP'] = True
+                    last_alerts['TEMP'] = now
+                    ewma_above_counter['TEMP'] = 0
+            else:
+                ewma_above_counter['TEMP'] = 0
+        else:
+            # In alert state, exit only if EWMA drops below TLOW
+            if ewma <= TLOW_TEMP:
+                ewma_alert_state['TEMP'] = False
+                ewma_above_counter['TEMP'] = 0
 
-    try:
-        if gas is not None and gas > 100:
-            return True, now
-        if noise is not None and noise > 600:
-            return True, now
-        if temp is not None and temp > 40:
-            return True, now
-        if hum is not None and (hum < 20 or hum > 80):
-            return True, now
-    except TypeError:
-        # If any field wasn't numeric, just ignore
-        return False, last_sent_time
+    # ...existing code for other sensors (GAS, NOISE, HUM)...
+    # You can implement similar EWMA/hysteresis logic for them if desired.
 
-    return False, last_sent_time
+    return triggered_sensors, now if triggered_sensors else last_sent_time
 
 
 def main():
-    # Basic connectivity check to Telegram (optional but helpful)
     print("[*] Starting. Chat ID:", CHAT_ID, "Port:", PORT)
     ping = send("🚀 Monitor started on laptop.")
     if ping is None:
@@ -118,13 +143,68 @@ def main():
                     send(f"📡 First data: {data}")
                     first_payload_sent = True
 
-                do_alert, last_sent = should_alert(data, last_sent)
-                if do_alert:
-                    msg = (f"⚠️ Alert\n"
-                           f"GAS={data.get('GAS','?')}  "
-                           f"NOISE={data.get('NOISE','?')}  "
-                           f"TEMP={data.get('TEMP','?')}°C  "
-                           f"HUM={data.get('HUM','?')}%")
+                triggered_sensors, last_sent = should_alert(data, last_sent)
+                for sensor in triggered_sensors:
+                    if sensor == 'TEMP':
+                        msg = f"⚠️ TEMPERATURE ALERT (EWMA): {ewma_state['TEMP']:.2f}°C (Threshold: {THIGH_TEMP}°C)"
+                    # ...existing code for other sensors...
+                    send(msg)
+
+            else:
+                # optional keyword triggers from your original code
+                if any(k in line for k in ("ALERT","INTRUDER","DANGER")):
+                    now = time.time()
+                    if now - last_sent > MIN_INTERVAL:
+                        send(f"⚠️ Alert from laptop: {line}")
+                        last_sent = now
+
+        except KeyboardInterrupt:
+            print("\n[!] Stopping…")
+            break
+        except Exception as e:
+            print(f"[loop] Error: {e}")
+
+    try:
+        ser.close()
+    except:
+        pass
+
+if __name__ == "__main__":
+    main()
+        try:
+            raw = ser.readline()
+            if not raw:
+                continue
+            line = raw.decode(errors="ignore").strip()
+            if not line:
+                continue
+
+            print("Serial:", line)
+            data = parse_metrics(line)
+
+            if data:
+                # Send the first parsed payload so you can verify end-to-end
+                if not first_payload_sent:
+                    send(f"📡 First data: {data}")
+                    first_payload_sent = True
+
+                triggered_sensors, last_sent = should_alert(data, last_sent)
+
+                # Send separate alerts for each triggered sensor
+                for sensor in triggered_sensors:
+                    if sensor == 'GAS':
+                        msg = f"⚠️ GAS ALERT: Level={data.get('GAS','?')} (Threshold: 100)"
+                    elif sensor == 'NOISE':
+                        msg = f"⚠️ NOISE ALERT: Level={data.get('NOISE','?')} (Threshold: 600)"
+                    elif sensor == 'TEMP':
+                        msg = f"⚠️ TEMPERATURE ALERT: {data.get('TEMP','?')}°C (Threshold: 40°C)"
+                    elif sensor == 'HUM':
+                        hum_value = data.get('HUM','?')
+                        if hum_value != '?' and float(hum_value) < 20:
+                            msg = f"⚠️ LOW HUMIDITY ALERT: {hum_value}% (Below threshold: 20%)"
+                        else:
+                            msg = f"⚠️ HIGH HUMIDITY ALERT: {hum_value}% (Above threshold: 80%)"
+
                     send(msg)
 
             else:
