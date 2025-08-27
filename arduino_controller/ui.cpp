@@ -149,8 +149,7 @@ void checkPassword() {
 
       if (pinndex == 4) {
         entered_PIN[4] = '\0';
-        bool ok = (strcmp(entered_PIN, correct_
-        PIN) == 0);
+        bool ok = (strcmp(entered_PIN, correct_PIN) == 0);
         successScreen(ok);
         resetEntry();
       }
