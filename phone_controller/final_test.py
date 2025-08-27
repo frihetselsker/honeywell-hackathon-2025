@@ -118,7 +118,7 @@ def evaluate_alerts(data: dict, st: AlertState):
     # --- NOISE simple threshold ---
     if isinstance(data.get("NOISE"), (int, float)):
         if data["NOISE"] > NOISE_HIGH and st.can_send("NOISE", now):
-            msgs.append(f"⚠️ NOISE ALERT: {data['NOISE']:.0f} (> {NOISE_HIGH:.0f})")
+            msgs.append(f"⚠️ NOISE ALERT: {data['NOISE']:.0f} (> {NOISE_HIGH:.0f} BABY IS CRYING!!!!)")
             st.mark_sent("NOISE", now)
 
     # --- HUM simple band ---
