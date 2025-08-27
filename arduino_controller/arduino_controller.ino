@@ -159,10 +159,13 @@ COROUTINE(menuTask) {
         } else {
           lcd.print(" Yes  >No");
         }
-        if (readButton() == 1) {
+        if (readButton() == 1 && pot < 512) {
           isCoolerOn = !isCoolerOn;
           Serial.println("TOGGLE_COOLER");
           link.println("TOGGLE_COOLER");
+          COROUTINE_DELAY(200); // Debounce
+          break;
+        } else if (readButton() == 1 && pot >= 512){
           COROUTINE_DELAY(200); // Debounce
           break;
         }
@@ -206,9 +209,13 @@ COROUTINE(menuTask) {
         } else {
           lcd.print(" Yes  >No");
         }
-        if (readButton() == 1) {
-           Serial.println("TOGGLE_WINDOW");
-        link.println("TOGGLE_WINDOW");
+        if (readButton() == 1 && pot < 512) {
+          isWindowOpen = !isWindowOpen;
+          Serial.println("TOGGLE_WINDOW");
+          link.println("TOGGLE_WINDOW");
+          COROUTINE_DELAY(200); // Debounce
+          break;
+        } else if (readButton() == 1 && pot >= 512){
           COROUTINE_DELAY(200); // Debounce
           break;
         }
@@ -251,9 +258,14 @@ COROUTINE(menuTask) {
         } else {
           lcd.print(" Yes  >No");
         }
-        if (readButton() == 1) {
+        delay(200);
+        if (readButton() == 1 && pot < 512) {
+          isBuzzerOn = !isBuzzerOn;
           Serial.println("TOGGLE_BUZZER");
-        link.println("TOGGLE_BUZZER");
+          link.println("TOGGLE_BUZZER");
+          COROUTINE_DELAY(200); // Debounce
+          break;
+        } else if (readButton() == 1 && pot >= 512){
           COROUTINE_DELAY(200); // Debounce
           break;
         }
