@@ -58,6 +58,8 @@ void setup() {
   Serial.begin(9600);
   Serial.println("B: ready");
   singAlert();
+  showWelcomeMessage();
+  showPrompt();
   // CoroutineScheduler::setup();
 }
 
@@ -74,9 +76,9 @@ void loop() {
   // }
   //delay(1000);
   //read_potentiometer();
-  //checkPassword();
+  checkPassword();
   // CoroutineScheduler::loop();
 
-  Serial.println(readButton());
-  delay(1000);
+  // Serial.println(readButton());
+  // delay(1000);
 }

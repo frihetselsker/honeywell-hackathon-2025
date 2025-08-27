@@ -45,6 +45,8 @@ void showWelcomeMessage() {
   lcd.print("Smart System");
   lcd.setCursor(0, 1);
   lcd.print("Controller Ready");
+  delay(2000);
+  lcd.clear();
 }
 
 void clearLCD() {
