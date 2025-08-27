@@ -90,36 +90,8 @@ COROUTINE(menuTask) {
         }
       }
 
-      // Check for button press to confirm
-      static bool awaitingConfirmation = false;
-      static bool confirmYes = true; // true = Yes, false = No
-
-      if (!awaitingConfirmation) {
-        if (readButton() == 1) { // Button pressed to select
-          awaitingConfirmation = true;
-          lcd.clear();
-          lcd.setCursor(0, 0);
-          lcd.print("Confirm?");
-          lcd.setCursor(0, 1);
-          lcd.print(">Yes   No");
-          confirmYes = true;
-          COROUTINE_DELAY(200); // Debounce
-        }
-      } else {
-        // Use potentiometer to toggle Yes/No
-        int pot = potValue;
-        if (pot < 512 && !confirmYes) {
-          confirmYes = true;
-          lcd.setCursor(0, 1);
-          lcd.print(">Yes   No");
-        } else if (pot >= 512 && confirmYes) {
-          confirmYes = false;
-          lcd.setCursor(0, 1);
-          lcd.print(" Yes  >No");
-        }
-        // Button press to confirm Yes/No
-        if (readButton() == 1) {
-          if (confirmYes) {
+      // Check for button press to select and immediately transition to the selected state
+      if (readButton() == 1) {
         switch (selectedMenuIndex) {
           case 0: menuState = ViewData; break;
           case 1: menuState = ViewTime; break;
@@ -127,12 +99,8 @@ COROUTINE(menuTask) {
           case 3: menuState = ControlWindow; break;
           case 4: menuState = ControlBuzzer; break;
         }
-          }
-          awaitingConfirmation = false;
-          selectedMenuIndex = -1; // Force menu redraw
-          lcd.clear();
-          COROUTINE_DELAY(200); // Debounce
-        }
+        lcd.clear();
+        COROUTINE_DELAY(200); // Debounce
       }
       
       COROUTINE_DELAY(5); // Polling rate
@@ -159,10 +127,10 @@ COROUTINE(menuTask) {
       printCentered("Distance: ", 0);
       printCentered(String(distanceValue), 1);
       COROUTINE_DELAY(4000); // Show for 2 seconds
-      lcd.clear();
-      menuState = Menu; // Return to menu
-      selectedMenuIndex = -1; // Force redraw
-      COROUTINE_YIELD();
+  lcd.clear();
+  menuState = Menu; // Return to menu
+  selectedMenuIndex = -1; // Force redraw when returning from submenu
+  COROUTINE_YIELD();
     } else if (menuState == ViewTime) {
       // Display current time
       //showTime();
@@ -189,13 +157,11 @@ COROUTINE(menuTask) {
       bool confirmYes = true;
       while (true) {
         int pot = potValue;
-        if (pot < 512 && !confirmYes) {
-          confirmYes = true;
-          lcd.setCursor(0, 1);
+        confirmYes = (pot < 512);
+        lcd.setCursor(0, 1);
+        if (confirmYes) {
           lcd.print(">Yes   No");
-        } else if (pot >= 512 && confirmYes) {
-          confirmYes = false;
-          lcd.setCursor(0, 1);
+        } else {
           lcd.print(" Yes  >No");
         }
         if (readButton() == 1) {
@@ -212,9 +178,9 @@ COROUTINE(menuTask) {
       lcd.setCursor(0, 0);
       lcd.print("Done");
       COROUTINE_DELAY(1000);
-      menuState = Menu;
-      selectedMenuIndex = -1; // Force menu redraw
-      COROUTINE_YIELD();
+  menuState = Menu;
+  selectedMenuIndex = -1; // Force menu redraw when returning from submenu
+  COROUTINE_YIELD();
     } else if (menuState == ControlWindow) {
       // Control window
       lcd.clear();
@@ -238,13 +204,11 @@ COROUTINE(menuTask) {
       bool confirmYes = true;
       while (true) {
         int pot = potValue;
-        if (pot < 512 && !confirmYes) {
-          confirmYes = true;
-          lcd.setCursor(0, 1);
+        confirmYes = (pot < 512);
+        lcd.setCursor(0, 1);
+        if (confirmYes) {
           lcd.print(">Yes   No");
-        } else if (pot >= 512 && confirmYes) {
-          confirmYes = false;
-          lcd.setCursor(0, 1);
+        } else {
           lcd.print(" Yes  >No");
         }
         if (readButton() == 1) {
@@ -261,9 +225,9 @@ COROUTINE(menuTask) {
       lcd.setCursor(0, 0);
       lcd.print("Done");
       COROUTINE_DELAY(1000);
-      menuState = Menu;
-      selectedMenuIndex = 0; // Reset to first menu item
-      COROUTINE_YIELD();
+  menuState = Menu;
+  selectedMenuIndex = -1; // Force menu redraw when returning from submenu
+  COROUTINE_YIELD();
     } else if (menuState == ControlBuzzer){
       // Control buzzer
       lcd.clear();
@@ -287,13 +251,11 @@ COROUTINE(menuTask) {
       bool confirmYes = true;
       while (true) {
         int pot = potValue;
-        if (pot < 512 && !confirmYes) {
-          confirmYes = true;
-          lcd.setCursor(0, 1);
+        confirmYes = (pot < 512);
+        lcd.setCursor(0, 1);
+        if (confirmYes) {
           lcd.print(">Yes   No");
-        } else if (pot >= 512 && confirmYes) {
-          confirmYes = false;
-          lcd.setCursor(0, 1);
+        } else {
           lcd.print(" Yes  >No");
         }
         if (readButton() == 1) {
@@ -310,9 +272,9 @@ COROUTINE(menuTask) {
       lcd.setCursor(0, 0);
       lcd.print("Done");
       COROUTINE_DELAY(1000);
-      menuState = Menu;
-      selectedMenuIndex = 0; // Reset to first menu item
-      COROUTINE_YIELD();
+  menuState = Menu;
+  selectedMenuIndex = -1; // Force menu redraw when returning from submenu
+  COROUTINE_YIELD();
     }
   }
 }
