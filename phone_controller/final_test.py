@@ -137,7 +137,7 @@ def main():
     print(f"[*] Starting. Chat ID: {CHAT_ID}  Port: {PORT}")
     send("🚀 Monitor started on laptop.")  # optional
 
-    # Open serial (exclusive — close Arduino Serial Monitor)
+    # Open serial
     try:
         ser = serial.Serial(PORT, BAUD, timeout=1)
     except Exception as e:

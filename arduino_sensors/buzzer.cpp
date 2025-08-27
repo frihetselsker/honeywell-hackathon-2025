@@ -11,6 +11,8 @@ void initBuzzer() {
   wholenote = (60000 * 4) / tempo;
 }
 
+// TODO: Class for Buzzer Coroutine
+
 // void playMelody() {
 //   int divider = 0;
 //   int noteDuration = 0;

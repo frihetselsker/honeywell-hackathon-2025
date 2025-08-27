@@ -10,7 +10,11 @@ extern bool is_window_open;
 extern  bool is_cooler_on;
 
 void initActuators();
-void toggleWidnow();
+void toggleWindow();
 void toggleCooler();
+void onWindow();
+void offWindow();
+void onCooler();
+void offCooler();
 
 #endif

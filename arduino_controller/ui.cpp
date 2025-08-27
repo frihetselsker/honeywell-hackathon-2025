@@ -33,7 +33,7 @@ Keypad k = Keypad(makeKeymap(keys), row_pins, col_pins, rows, cols);
 void initUI() {
   lcd.init();
   lcd.backlight();
-  showPrompt();
+  showWelcomeMessage();
   pinMode(RGB_RED_PIN, OUTPUT);
   pinMode(RGB_GREEN_PIN, OUTPUT);
   pinMode(RGB_BLUE_PIN, OUTPUT);

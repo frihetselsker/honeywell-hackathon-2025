@@ -8,16 +8,14 @@
 #include <AceRoutine.h>
 using namespace ace_routine;
 
-
+static bool is_buzzer_on = false;
 
 // Static values
 static int gasValue = 0;
 static int noiseValue = 0;
 static float tempValue = 0.0;
 static float humValue = 0.0;
-static int distance = 0;
-
-static bool is_buzzer_on = false;
+static int distanceValue = 0;
 
 
 COROUTINE(gasTask) {
@@ -26,11 +24,6 @@ COROUTINE(gasTask) {
     COROUTINE_DELAY(200);
     // Serial.print("Gas: ");
     // Serial.println(gasValue);
-    if (gasValue > 100) {
-      is_window_open = true;
-    } else {
-      is_window_open = false;
-    }
     COROUTINE_YIELD();
   }
 }
@@ -38,9 +31,10 @@ COROUTINE(gasTask) {
 
 COROUTINE(distanceTask) {
   COROUTINE_LOOP() {
-    COROUTINE_DELAY(3000);
+    distanceValue = readDistance();
+    COROUTINE_DELAY(200);
     Serial.print("Distance: ");
-    Serial.println(readDistance());
+    Serial.println(distanceValue);
     COROUTINE_YIELD();
   }
 }
@@ -96,7 +90,7 @@ COROUTINE(buzzerTask) {
         thisNote += 2;
         
         // Small delay between notes
-        COROUTINE_DELAY(50);
+        COROUTINE_DELAY(25);
       } else {
         // If buzzer is off, ensure no tone is playing and reset state
         noTone(BUZZER_PIN);
@@ -138,7 +132,7 @@ COROUTINE(DHTTask) {
   COROUTINE_LOOP() {
     tempValue = readTemperature();
     humValue = readHumidity();
-    COROUTINE_DELAY(3000);
+    COROUTINE_DELAY(300);
     // Serial.print("Temeperature: ");
     // Serial.print(tempValue, 2);
     // Serial.print("Humidity: ");
@@ -147,30 +141,26 @@ COROUTINE(DHTTask) {
   }
 }
 
-COROUTINE(actuatorTask) {
+COROUTINE(coolerTask) {
   COROUTINE_LOOP() {
-    // if (is_window_open && window_pos == 90) {
-    //     for (window_pos = 90; window_pos >= 0; window_pos--) { // goes from 0 degrees to 180 degrees
-    //         window.write(window_pos);              // tell servo to go to position in variable 'window_pos'
-    //         delay(15);                       // waits 15ms for the servo to reach the position
-    //     }
-    // } else if (!is_window_open && window_pos == 0) {
-    //     for (window_pos = 0; window_pos <= 90; window_pos++) { // goes from 180 degrees to 0 degrees
-    //         window.write(window_pos);              // tell servo to go to position in variable 'window_pos' 
-    //         delay(15);                       // waits 15ms for the servo to reach the position
-    //     }
-    // }
-
-    if (gasValue > 100 && !is_cooler_on) {
-      Serial.println("Let's save planet from global warming");
-      toggleCooler();
-
-    } else if (gasValue > 100 && is_cooler_on) {
-      Serial.println("Still working");
-    } else if (gasValue < 100 && is_cooler_on){
-      toggleCooler();
+    if (gasValue > 100 || tempValue > 26.0 || humValue > 70.0) {
+      onCooler();
+    } else {
+      offCooler();
     }
-    COROUTINE_DELAY(1000);
+    COROUTINE_DELAY(200);
+    COROUTINE_YIELD();
+  }
+}
+
+COROUTINE(windowTask) {
+  COROUTINE_LOOP() {
+    if (gasValue > 100 || humValue > 70.0) {
+      onWindow();
+    } else {
+      offWindow();
+    }
+    COROUTINE_DELAY(200);
     COROUTINE_YIELD();
   }
 }
@@ -181,12 +171,9 @@ COROUTINE(commTask) {
      COROUTINE_AWAIT(link.available() > 0);
       String cmd = link.readStringUntil('\n');
       cmd.trim();
-      //Serial.print("Received command: ");
-      // Serial.println(cmd);
       
       if (cmd == "REQ") {
         // Send sensor data in response to request
-        // Serial.println("Sending sensor data...");
         link.print("GAS:");
         link.print(gasValue);
         link.print(",NOISE:"); 
@@ -194,11 +181,26 @@ COROUTINE(commTask) {
         link.print(",TEMP:"); 
         link.print(tempValue, 2); 
         link.print(",HUM:"); 
-        link.println(humValue, 2);
+        link.print(humValue, 2);
+        link.print(",DIST:");
+        link.print(distanceValue);
+        link.print(",WINDOW:");
+        link.print(is_window_open);
+        link.print(",COOLER:");
+        link.print(is_cooler_on);
+        link.print(",BUZZER:");
+        link.print(is_buzzer_on);
+      } else if (cmd == "TOGGLE_WINDOW") {
+        toggleWindow();
+      } else if (cmd == "TOGGLE_COOLER") {
+        toggleCooler();
+      } else if (cmd == "TOGGLE_BUZZER") {
+        is_buzzer_on = !is_buzzer_on;
+      } else {
+        Serial.print("Unknown command: ");
+        Serial.println(cmd);
       }
     }
-    
-    // Small delay to avoid CPU hogging
     COROUTINE_YIELD();
   }
 
@@ -211,6 +213,13 @@ void setup() {
   initComms();
   initSensors();
   initBuzzer();
+  
+  Serial.print(",WINDOW:");
+  Serial.print(is_window_open);
+  Serial.print(",COOLER:");
+  Serial.print(is_cooler_on);
+  Serial.print(",BUZZER:");
+  Serial.print(is_buzzer_on);
   CoroutineScheduler::setup();
 }
 

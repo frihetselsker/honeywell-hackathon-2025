@@ -7,15 +7,15 @@
 #include <SoftwareSerial.h>
 using namespace ace_routine;
 
-enum GasState
+enum State
 {
-  BadGasState,
-  MediumGasState,
-  GoodGasState
+  GoodState,
+  MediumState,
+  BadState
 };
 
 // State variables
-static GasState gasState = GoodGasState;
+static State state = GoodState;
 
 // Globals to store the latest sensor values
 static int gasValue = 0;
@@ -27,19 +27,19 @@ COROUTINE(stateTask)
 {
   COROUTINE_LOOP()
   {
-    GasState prev = gasState;
+    State prev = state;
     int gv = gasValue; // snapshot for consistent logging
     if (gv > 200)
     {
-      gasState = BadGasState;
+      state = BadState;
     }
     else if (gv > 100)
     {
-      gasState = MediumGasState;
+      state = MediumState;
     }
     else
     {
-      gasState = GoodGasState;
+      state = GoodState;
     }
 
     COROUTINE_DELAY(50); // update 2 Hz
@@ -50,19 +50,19 @@ COROUTINE(rgbTask)
 {
   COROUTINE_LOOP()
   {
-    switch (gasState)
+    switch (state)
     {
-    case BadGasState:
+    case BadState:
       // Serial.println("Danger! Gas level HIGH!");
       setRGB(255, 0, 0);
       break;
 
-    case MediumGasState:
+    case MediumState:
       // Serial.println("Warning: Medium gas level.");
       setRGB(255, 255, 0);
       break;
 
-    case GoodGasState:
+    case GoodState:
       // Serial.println("Gas levels normal.");
       setRGB(0, 255, 0);
       break;
@@ -79,9 +79,6 @@ COROUTINE(commTask)
     // Request sensor data
     Serial.println("Requesting sensor data...");
     link.println("REQ");
-    Serial.print("Task Comm addr gasValue = 0x");
-    Serial.println((uintptr_t)&gasValue, HEX);
-    // Wait for response with timeout
     unsigned long startTime = millis();
     while (millis() - startTime < 1000)
     { // 1 second timeout
@@ -124,32 +121,22 @@ void setup()
   initUI();
   initComms();
   initMisc();
-  setRGB(255, 0, 0); // Set RGB to red
+  setRGB(255, 255, 255); // Set RGB to white
   Serial.begin(9600);
   Serial.println("B: ready");
   singAlert();
-  showWelcomeMessage();
+  delay(2000);
   showPrompt();
   CoroutineScheduler::setup();
 }
 
-void loop()
-{
-  // if (mySerial.available() > 0) {
-  //   String msg = mySerial.readStringUntil('\n');
-  //   msg.trim(); // remove any \r
-  //   Serial.print("B: got <- ");
-  //   Serial.println(msg);
-
-  //   // reply back (with newline!)
-  //   mySerial.println("ACK from B");
-  //   Serial.println("B: sent -> ACK from B");
-  // }
-  // delay(1000);
-  // read_potentiometer();
-  // checkPassword();
+void loop(){
+  int pot = readPotentiometer();
+  Serial.println(pot);
+  delay(1000);
+  checkPassword();
   CoroutineScheduler::loop();
 
   // Serial.println(readButton());
-  // delay(1000);
+  
 }
