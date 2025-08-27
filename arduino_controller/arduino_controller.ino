@@ -15,7 +15,7 @@ COROUTINE(commTask) {
     String cmd = link.readStringUntil('\n');
     Serial.println("Got a message");
     Serial.println(cmd);
-    COROUTINE_DELAY(100);
+    COROUTINE_DELAY(1000);
   }
 }
 

@@ -125,17 +125,18 @@ COROUTINE(DHTTask) {
 
 COROUTINE(commTask) {
   COROUTINE_LOOP() {
-    COROUTINE_AWAIT(link.available() > 0);
-    String cmd = link.readStringUntil('\n');
-    Serial.println("Got a message");
-    Serial.println(cmd);
+    // COROUTINE_AWAIT(link.available() > 0);
+    // String cmd = link.readStringUntil('\n');
+    // Serial.println("Got a message");
+    // Serial.println(cmd);
     Serial.println("Sending a message");
+    
     link.print("GAS:");
     link.print(gasValue);
     link.print(",NOISE:"); link.print(noiseValue);
     link.print(",TEMP:"); link.print(tempValue, 2); 
     link.print(",HUM:"); link.println(humValue, 2);
-    COROUTINE_DELAY(1000);
+    COROUTINE_DELAY(500);
   }
 }
 
