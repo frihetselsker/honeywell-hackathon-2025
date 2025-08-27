@@ -44,7 +44,7 @@ void singAlert() {
 int readPotentiometer() {
   int potent_reading = analogRead(POTEN_PIN);
 
-  Serial.println(potent_reading);
+  //Serial.println(potent_reading);
 
   return potent_reading;
 }

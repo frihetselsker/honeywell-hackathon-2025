@@ -25,7 +25,6 @@ enum MenuState {
 
 const char* menuItems[] = {
   "View Data",
-  "View Time",
   "Control Cooler",
   "Control Window",
   "Control Buzzer"
@@ -56,7 +55,7 @@ COROUTINE(potTask)
   COROUTINE_LOOP()
   {
     potValue = readPotentiometer();
-    Serial.println(potValue);
+    // Serial.println(potValue);
     COROUTINE_DELAY(10); // update 100 Hz
   }
 }
@@ -94,10 +93,9 @@ COROUTINE(menuTask) {
       if (readButton() == 1) {
         switch (selectedMenuIndex) {
           case 0: menuState = ViewData; break;
-          case 1: menuState = ViewTime; break;
-          case 2: menuState = ControlCooler; break;
-          case 3: menuState = ControlWindow; break;
-          case 4: menuState = ControlBuzzer; break;
+          case 1: menuState = ControlCooler; break;
+          case 2: menuState = ControlWindow; break;
+          case 3: menuState = ControlBuzzer; break;
         }
         lcd.clear();
         COROUTINE_DELAY(200); // Debounce
@@ -131,9 +129,6 @@ COROUTINE(menuTask) {
   menuState = Menu; // Return to menu
   selectedMenuIndex = -1; // Force redraw when returning from submenu
   COROUTINE_YIELD();
-    } else if (menuState == ViewTime) {
-      // Display current time
-      //showTime();
     } else if (menuState == ControlCooler) {
       // Control cooler
       lcd.clear();
@@ -165,15 +160,15 @@ COROUTINE(menuTask) {
           lcd.print(" Yes  >No");
         }
         if (readButton() == 1) {
+          isCoolerOn = !isCoolerOn;
+          Serial.println("TOGGLE_COOLER");
+          link.println("TOGGLE_COOLER");
           COROUTINE_DELAY(200); // Debounce
           break;
         }
         COROUTINE_YIELD();
       }
-      if (confirmYes) {
-        isCoolerOn = !isCoolerOn;
-        // Optionally send command to hardware here
-      }
+      
       lcd.clear();
       lcd.setCursor(0, 0);
       lcd.print("Done");
@@ -212,14 +207,12 @@ COROUTINE(menuTask) {
           lcd.print(" Yes  >No");
         }
         if (readButton() == 1) {
+           Serial.println("TOGGLE_WINDOW");
+        link.println("TOGGLE_WINDOW");
           COROUTINE_DELAY(200); // Debounce
           break;
         }
         COROUTINE_YIELD();
-      }
-      if (confirmYes) {
-        isWindowOpen = !isWindowOpen;
-        // Optionally send command to hardware here
       }
       lcd.clear();
       lcd.setCursor(0, 0);
@@ -259,14 +252,12 @@ COROUTINE(menuTask) {
           lcd.print(" Yes  >No");
         }
         if (readButton() == 1) {
+          Serial.println("TOGGLE_BUZZER");
+        link.println("TOGGLE_BUZZER");
           COROUTINE_DELAY(200); // Debounce
           break;
         }
         COROUTINE_YIELD();
-      }
-      if (confirmYes) {
-        isBuzzerOn = !isBuzzerOn;
-        // Optionally send command to hardware here
       }
       lcd.clear();
       lcd.setCursor(0, 0);
@@ -283,6 +274,7 @@ COROUTINE(stateTask)
 {
   COROUTINE_LOOP()
   {
+    Serial.println("Checking state...");
     if (gasValue > 200 || noiseValue > 150 || tempValue > 35.0 || humValue > 80.0)
     {
       state = BadState;
@@ -296,7 +288,7 @@ COROUTINE(stateTask)
       state = GoodState;
     }
 
-    COROUTINE_DELAY(50); // update 2 Hz
+    COROUTINE_DELAY(2000); // update 2 Hz
   }
 }
 
