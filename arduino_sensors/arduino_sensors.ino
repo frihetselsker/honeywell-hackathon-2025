@@ -214,12 +214,12 @@ void setup() {
   initSensors();
   initBuzzer();
   
-  Serial.print(",WINDOW:");
-  Serial.print(is_window_open);
-  Serial.print(",COOLER:");
-  Serial.print(is_cooler_on);
-  Serial.print(",BUZZER:");
-  Serial.print(is_buzzer_on);
+  // Serial.print(",WINDOW:");
+  // Serial.print(is_window_open);
+  // Serial.print(",COOLER:");
+  // Serial.print(is_cooler_on);
+  // Serial.print(",BUZZER:");
+  // Serial.print(is_buzzer_on);
   CoroutineScheduler::setup();
 }
 

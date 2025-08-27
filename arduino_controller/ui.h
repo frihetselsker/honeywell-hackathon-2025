@@ -2,8 +2,15 @@
 #define UI_H
 
 #include <LiquidCrystal_I2C.h>
+#include <Keypad.h>
+#include <Arduino.h>
 
 extern LiquidCrystal_I2C lcd;
+extern Keypad k;
+
+extern const char correct_PIN[];
+extern char entered_PIN[5];   // 4 chars + '\0'
+extern byte pinndex;
 
 // UI-related functions
 void initUI();

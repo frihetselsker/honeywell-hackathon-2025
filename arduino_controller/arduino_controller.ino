@@ -11,16 +11,19 @@ enum State
 {
   GoodState,
   MediumState,
-  BadState
+  BadState,
+  AlertState
 };
 
 enum MenuState {
+  PasswordState,
   Menu,
   ViewData,
   ViewTime,
   ControlCooler,
   ControlWindow,
-  ControlBuzzer
+  ControlBuzzer,
+  AlertState
 };
 
 const char* menuItems[] = {
@@ -36,7 +39,74 @@ bool menuConfirmed = false;
 
 // State variables
 static State state = GoodState;
-static MenuState menuState = Menu;
+static MenuState menuState = PasswordState;
+// Password state variables
+static int passwordAttempts = 0;
+static bool passwordOk = false;
+
+
+COROUTINE(passwordTask) {
+  COROUTINE_LOOP() {
+    if (menuState == PasswordState) {
+      showPrompt();
+      passwordAttempts = 0;
+      passwordOk = false;
+      while (menuState == PasswordState) {
+        // Use checkPassword() to process keypad input
+        char key = k.getKey();
+        if (!key) {
+          COROUTINE_YIELD();
+          continue;
+        }
+        // '*' clears the PIN entry
+        if (key == '*') {
+          resetEntry();
+          COROUTINE_YIELD();
+          continue;
+        }
+        // '#' works like backspace
+        if (key == '#') {
+          if (pinndex > 0) pinndex--;
+          showStars();
+          COROUTINE_YIELD();
+          continue;
+        }
+        // Accept digits 0-9 and A-D
+        if ((key >= '0' && key <= '9') || (key >= 'A' && key <= 'D')) {
+          if (pinndex < 4) {
+            entered_PIN[pinndex] = key;
+            pinndex++;
+            showStars();
+            if (pinndex == 4) {
+              entered_PIN[4] = '\0';
+              bool ok = (strcmp(entered_PIN, correct_PIN) == 0);
+              successScreen(ok);
+              if (ok) {
+                passwordOk = true;
+                menuState = Menu;
+                selectedMenuIndex = -1;
+                COROUTINE_DELAY(200);
+                break;
+              } else {
+                passwordAttempts++;
+                if (passwordAttempts >= 3) {
+                  menuState = AlertState;
+                  COROUTINE_DELAY(200);
+                  break;
+                }
+                resetEntry();
+                COROUTINE_DELAY(200);
+              }
+            }
+          }
+        }
+        COROUTINE_YIELD();
+      }
+    } else {
+      COROUTINE_YIELD();
+    }
+  }
+}
 
 // Globals to store the latest sensor values
 static int gasValue = 0;
@@ -63,7 +133,19 @@ COROUTINE(potTask)
 COROUTINE(menuTask) {
   COROUTINE_LOOP()
   {
-    if (menuState == Menu) {
+    if (menuState == PasswordState) {
+      // Block menu until passwordTask completes
+      COROUTINE_YIELD();
+    } else if (menuState == AlertState) {
+      // Alert: Buzzer, Red LED, show alert message
+      state = AlertState;
+      lcd.clear();
+      printCentered("ALERT!", 0);
+      printCentered("LOCKED OUT", 1);
+      while (1) {
+        COROUTINE_YIELD();
+      }
+    } else if (menuState == Menu) {
       // Read potentiometer and map to menu index
       int pot = potValue;
       int range = 1024 / menuItemCount; // For 4 items, range = 256
@@ -286,7 +368,15 @@ COROUTINE(stateTask)
 {
   COROUTINE_LOOP()
   {
-    Serial.println("Checking state...");
+    Serial.println("Requesting sensor data...");
+    if (state == AlertState) {
+      for (int i = 0; i < 3; i++) {
+        setRGB(255, 0, 0);
+        singAlert();
+        COROUTINE_DELAY(200);
+        setRGB(0, 0, 0);
+      }
+    }
     if (gasValue > 200 || noiseValue > 150 || tempValue > 35.0 || humValue > 80.0)
     {
       state = BadState;
@@ -300,7 +390,7 @@ COROUTINE(stateTask)
       state = GoodState;
     }
 
-    COROUTINE_DELAY(2000); // update 2 Hz
+    COROUTINE_DELAY(200); // update 2 Hz
   }
 }
 
@@ -327,55 +417,55 @@ COROUTINE(rgbTask)
   }
 }
 
-// COROUTINE(commTask)
-// {
-//   COROUTINE_LOOP()
-//   {
-//     // Request sensor data
-//     Serial.println("Requesting sensor data...");
-//     link.println("REQ");
-//     unsigned long startTime = millis();
-//     while (millis() - startTime < 1000)
-//     { // 1 second timeout
-//       COROUTINE_YIELD();
-//       if (link.available() > 0)
-//       {
-//         String response = link.readStringUntil('\n');
-//         response.trim();
-//         Serial.print("Received: ");
-//         Serial.println(response);
+COROUTINE(commTask)
+{
+  COROUTINE_LOOP()
+  {
+    // Request sensor data
+    Serial.println("Requesting sensor data...");
+    link.println("REQ");
+    unsigned long startTime = millis();
+    while (millis() - startTime < 1000)
+    { // 1 second timeout
+      COROUTINE_YIELD();
+      if (link.available() > 0)
+      {
+        String response = link.readStringUntil('\n');
+        response.trim();
+        Serial.print("Received: ");
+        Serial.println(response);
 
-//         // Parse the extended response
-//         int g = 0, n = 0, dist = 0;
-//         float t = 0.0, h = 0.0;
-//         int window = 0, cooler = 0, buzzer = 0;
+        // Parse the extended response
+        int g = 0, n = 0, dist = 0;
+        float t = 0.0, h = 0.0;
+        int window = 0, cooler = 0, buzzer = 0;
 
-//         // Example: GAS:123,NOISE:45,TEMP:23.45,HUM:56.78,DIST:100,WINDOW:1,COOLER:0,BUZZER:1
-//         int parsed = sscanf(response.c_str(),
-//           "GAS:%d,NOISE:%d,TEMP:%f,HUM:%f,DIST:%d,WINDOW:%d,COOLER:%d,BUZZER:%d",
-//           &g, &n, &t, &h, &dist, &window, &cooler, &buzzer);
+        // Example: GAS:123,NOISE:45,TEMP:23.45,HUM:56.78,DIST:100,WINDOW:1,COOLER:0,BUZZER:1
+        int parsed = sscanf(response.c_str(),
+          "GAS:%d,NOISE:%d,TEMP:%f,HUM:%f,DIST:%d,WINDOW:%d,COOLER:%d,BUZZER:%d",
+          &g, &n, &t, &h, &dist, &window, &cooler, &buzzer);
 
-//         if (parsed == 8) {
-//           gasValue = g;
-//           noiseValue = n;
-//           tempValue = t;
-//           humValue = h;
-//           distanceValue = dist;
-//           isWindowOpen = (window != 0);
-//           isCoolerOn = (cooler != 0);
-//           isBuzzerOn = (buzzer != 0);
+        if (parsed == 8) {
+          gasValue = g;
+          noiseValue = n;
+          tempValue = t;
+          humValue = h;
+          distanceValue = dist;
+          isWindowOpen = (window != 0);
+          isCoolerOn = (cooler != 0);
+          isBuzzerOn = (buzzer != 0);
 
-//           Serial.println("Successfully parsed extended sensor data");
-//         } else {
-//           Serial.println("Failed to parse sensor data");
-//         }
-//       }
-//     }
-//   }
+          Serial.println("Successfully parsed extended sensor data");
+        } else {
+          Serial.println("Failed to parse sensor data");
+        }
+      }
+    }
+  }
 
-//   // Wait before next request
-//   COROUTINE_DELAY(2000);
-// }
+  // Wait before next request
+  COROUTINE_DELAY(2000);
+}
 
 void setup()
 {
@@ -385,8 +475,9 @@ void setup()
   setRGB(255, 255, 255); // Set RGB to white
   Serial.begin(9600);
   Serial.println("B: ready");
-  singAlert();
+  singSuccess();
   selectedMenuIndex = -1;
+  menuState = PasswordState;
   //delay(2000);
   //showPrompt();
   CoroutineScheduler::setup();
@@ -395,7 +486,6 @@ void setup()
 void loop(){
   //delay(1000);
   //Serial.println(readButton());
-  //checkPassword();
   CoroutineScheduler::loop();
 
   // Serial.println(readButton());
