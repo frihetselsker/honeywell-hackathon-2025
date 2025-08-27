@@ -4,11 +4,11 @@
 #include <Arduino.h>
 
 // UI Elements
-inline constexpr int RGB_RED_PIN   = 9;   // Example
+inline constexpr int RGB_RED_PIN   = 9;   
 inline constexpr int RGB_GREEN_PIN = 10;
 inline constexpr int RGB_BLUE_PIN  = 11;
 
-inline constexpr int BUTTON_PIN    = 2;
+inline constexpr int BUTTON_PIN    = A3;
 inline constexpr int POTEN_PIN     = A0;
 
 // Pinpad

@@ -77,5 +77,6 @@ void loop() {
   //checkPassword();
   // CoroutineScheduler::loop();
 
-  checkPassword();
+  Serial.println(readButton());
+  delay(1000);
 }

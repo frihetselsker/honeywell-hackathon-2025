@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 void initMisc() {
-    pinMode(BUTTON_PIN, INPUT_PULLUP); // Button with internal pull-up
+    pinMode(BUTTON_PIN, INPUT); // Button with internal pull-up
     pinMode(BUZZER_PIN, OUTPUT);
 }
 bool readButton() {
