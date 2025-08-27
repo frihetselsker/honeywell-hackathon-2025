@@ -13,18 +13,19 @@ byte pinndex = 0;
 
 
 //!!! WE NEED TO FIX IT !!!
-// ==== KEYPAD SETUP: 3x3 (digits only) ====
-const byte rows = 3;
-const byte cols = 3;
+// ==== KEYPAD SETUP: 4x4 (digits only) ====
+const byte rows = 4;
+const byte cols = 4;
 
 // use only the first 3 row pins and first 3 column pins
-byte row_pins[rows] = {9, 8, 7}; 
-byte col_pins[cols] = {5, 4, 3};   
+byte row_pins[rows] = {2, 3, 4, 5}; 
+byte col_pins[cols] = {7, 8, A1, A2};   
 
 char keys[rows][cols] = {
-  {'1','2','3'},
-  {'4','5','6'},
-  {'7','8','9'}
+  {'1','2','3', 'A'},
+  {'4','5','6', 'B'},
+  {'7','8','9', 'C'},
+  {'*', '0', '#', 'D'}
 };
 
 Keypad k = Keypad(makeKeymap(keys), row_pins, col_pins, rows, cols);
@@ -129,12 +130,14 @@ void checkPassword() {
 
   // '*' clears the PIN entry
   if (key == '*') {
+    Serial.println(key);
     resetEntry();
     return;
   }
 
   // '#' works like backspace
   if (key == '#') {
+    Serial.println(key);
     if (pinndex > 0) pinndex--;
     showStars();
     return;
@@ -142,6 +145,7 @@ void checkPassword() {
 
   // Accept digits 0-9 and A-D
   if ((key >= '0' && key <= '9') || (key >= 'A' && key <= 'D')) {
+    Serial.println(key);
     if (pinndex < 4) {
       entered_PIN[pinndex] = key;
       pinndex++;
