@@ -5,19 +5,20 @@
 #include <Keypad.h>
 #include <Arduino.h>
 
-inline constexpr float VCC; // 5V
+// Power consumption constants (declare as extern, define in .cpp)
+extern const float VCC; // 5V
 
-inline constexpr float D1_POWER_CONSUMPTION; // 2 mA RGB LED
-inline constexpr float PIEZO1_POWER_CONSUMPTION; // Buzzer
-inline constexpr float PIEZO3_POWER_CONSUMPTION; // Buzzer
-inline constexpr float ARDUINO1_POWER_CONSUMPTION; // 70 mA
-inline constexpr float ARDUINO2_POWER_CONSUMPTION; // 70 mA
-inline constexpr float LCD_POWER_CONSUMPTION; // 20 mA
-inline constexpr float GAS_POWER_CONSUMPTION; // 150 mA
-inline constexpr float NOISE_SENSOR_POWER_CONSUMPTION; // 20 mA
-inline constexpr float FIRE_SENSOR_POWER_CONSUMPTION; // 20 mA
-inline constexpr float SERVO_POWER_CONSUMPTION; // 150 mA
-inline constexpr float M1_POWER_CONSUMPTION; // MOTOR 1
+extern const float D1_POWER_CONSUMPTION; // 2 mA RGB LED
+extern const float PIEZO1_POWER_CONSUMPTION; // Buzzer
+extern const float PIEZO3_POWER_CONSUMPTION; // Buzzer
+extern const float ARDUINO1_POWER_CONSUMPTION; // 70 mA
+extern const float ARDUINO2_POWER_CONSUMPTION; // 70 mA
+extern const float LCD_POWER_CONSUMPTION; // 20 mA
+extern const float GAS_POWER_CONSUMPTION; // 150 mA
+extern const float NOISE_SENSOR_POWER_CONSUMPTION; // 20 mA
+extern const float FIRE_SENSOR_POWER_CONSUMPTION; // 20 mA
+extern const float SERVO_POWER_CONSUMPTION; // 150 mA
+extern const float M1_POWER_CONSUMPTION; // MOTOR 1
 
 extern LiquidCrystal_I2C lcd;
 extern Keypad k;
@@ -40,6 +41,6 @@ void resetEntry();
 void printCentered(String text, unsigned int row);
 void checkPassword();
 void successScreen(bool ok);
-void powerUsage()
+void powerUsage(); // <-- fixed missing semicolon
 
 #endif
