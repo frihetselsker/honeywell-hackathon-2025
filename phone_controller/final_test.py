@@ -26,7 +26,11 @@ GAS_HIGH   = 200.0
 NOISE_HIGH = 600.0
 HUM_LOW    = 20.0
 HUM_HIGH   = 80.0
-# --------------------------------------------
+
+# Global variable to store latest metrics
+latest_metrics = {}
+# Global variable to store latest power usage (in watts)
+latest_power_usage_w = None
 
 
 def send(msg: str):
@@ -46,23 +50,27 @@ def send(msg: str):
 
 def parse_metrics(line: str):
     """
-    Accepts lines like:
-      'Received: GAS:127,NOISE:556,TEMP:26.00,HUM:27.00'
-    Returns dict with floats where possible:
-      {'GAS':127.0,'NOISE':556.0,'TEMP':26.0,'HUM':27.0}
+    Parses Arduino data lines like:
+      'GAS:123,NOISE:45,TEMP:23.45,HUM:56.78,DIST:100,WINDOW:1,COOLER:0,BUZZER:1'
+    Stores result in global variable latest_metrics and returns the dict.
     """
-    if line.startswith("Received:"):
-        line = line[len("Received:"):].strip()
+    global latest_metrics
     data = {}
     for token in line.split(","):
         token = token.strip()
         if ":" in token:
             k, v = token.split(":", 1)
             k = k.strip().upper()
+            v = v.strip()
+            # Try to convert to float or int if possible
             try:
-                data[k] = float(v.strip())
+                if "." in v:
+                    data[k] = float(v)
+                else:
+                    data[k] = int(v)
             except ValueError:
-                data[k] = v.strip()
+                data[k] = v
+    latest_metrics = data.copy()
     return data
 
 
@@ -72,6 +80,8 @@ class AlertState:
         self.temp_in_alert = False
         self.temp_above_count = 0
         self.last_alert_time = {"TEMP": 0.0, "GAS": 0.0, "NOISE": 0.0, "HUM": 0.0}
+        # For garage arrival detection
+        self.home_arrived = False
 
     def can_send(self, sensor: str, now: float) -> bool:
         return now - self.last_alert_time.get(sensor, 0.0) >= MIN_INTERVAL
@@ -130,6 +140,16 @@ def evaluate_alerts(data: dict, st: AlertState):
             msgs.append(f"⚠️ {kind} HUMIDITY ALERT: {hum:.0f}% (limit {limit:.0f}%)")
             st.mark_sent("HUM", now)
 
+    # --- DIST garage arrival ---
+    DIST_HOME_THRESHOLD = 30  # centimeters, adjust as needed
+    if isinstance(data.get("DIST"), (int, float)):
+        dist = data["DIST"]
+        if dist <= DIST_HOME_THRESHOLD and not st.home_arrived:
+            msgs.append("🏠 Home, sweet home! The car has arrived in the garage.")
+            st.home_arrived = True
+        elif dist > DIST_HOME_THRESHOLD and st.home_arrived:
+            st.home_arrived = False
+
     return msgs
 
 
@@ -160,6 +180,22 @@ def main():
                 continue
 
             print("Serial:", line)
+
+            # Check for power usage string
+            if line.startswith("Estimated power usage:"):
+                try:
+                    # Example: 'Estimated power usage: 5.25 W' (may have non-breaking space)
+                    import re
+                    m = re.search(r"Estimated power usage:\s*([\d.]+)", line)
+                    if m:
+                        global latest_power_usage_w
+                        latest_power_usage_w = float(m.group(1))
+                        print(f"Power usage: {latest_power_usage_w} W")
+                        send(f"⚡ Power usage: {latest_power_usage_w} W")
+                except Exception as e:
+                    print(f"[Power parse error] {e}")
+                continue
+
             data = parse_metrics(line)
 
             if data and SEND_FIRST_DATA and not first_payload_sent:

@@ -44,6 +44,20 @@ static MenuState menuState = PasswordState;
 static int passwordAttempts = 0;
 static bool passwordOk = false;
 
+COROUTINE(powerTask) {
+  COROUTINE_LOOP() {
+    powerUsage();
+    COROUTINE_DELAY(10000); // Update every 10 seconds
+  }
+}
+
+// COROUTINE(botTask) {
+//   COROUTINE_LOOP() {
+//     // Simulate bot behavior
+//     Serial.println("Bot is active");
+//     COROUTINE_DELAY(5000); // Update every 5 seconds
+//   }
+// }
 
 COROUTINE(passwordTask) {
   COROUTINE_LOOP() {
@@ -375,6 +389,7 @@ COROUTINE(stateTask)
         singAlert();
         COROUTINE_DELAY(200);
         setRGB(0, 0, 0);
+        COROUTINE_DELAY(200);
       }
     }
     if (gasValue > 200 || noiseValue > 150 || tempValue > 35.0 || humValue > 80.0)

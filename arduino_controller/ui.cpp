@@ -160,3 +160,23 @@ void checkPassword() {
     }
   }
 }
+
+void powerUsage() {
+  float total_current = D1_POWER_CONSUMPTION
+                      + PIEZO1_POWER_CONSUMPTION
+                      + PIEZO3_POWER_CONSUMPTION
+                      + ARDUINO1_POWER_CONSUMPTION
+                      + ARDUINO2_POWER_CONSUMPTION
+                      + LCD_POWER_CONSUMPTION
+                      + GAS_POWER_CONSUMPTION
+                      + NOISE_SENSOR_POWER_CONSUMPTION
+                      + FIRE_SENSOR_POWER_CONSUMPTION
+                      + SERVO_POWER_CONSUMPTION
+                      + M1_POWER_CONSUMPTION;
+
+  float total_power = VCC * total_current;
+
+  Serial.print("Estimated power usage: ");
+  Serial.print(total_power, 3);
+  Serial.println(" W");
+}
