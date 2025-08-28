@@ -7,6 +7,20 @@
 
 static LiquidCrystal_I2C lcd(0x27, 16, 2);
 
+const float VCC = 5.0; // 5V
+
+const float D1_POWER_CONSUMPTION = 0.002; // 2 mA RGB LED
+const float PIEZO1_POWER_CONSUMPTION = 0.05; // Buzzer
+const float PIEZO3_POWER_CONSUMPTION = 0.05; // Buzzer
+const float ARDUINO1_POWER_CONSUMPTION = 0.07; // 70 mA
+const float ARDUINO2_POWER_CONSUMPTION = 0.07; // 70 mA
+const float LCD_POWER_CONSUMPTION = 0.02; // 20 mA
+const float GAS_POWER_CONSUMPTION = 0.150; // 150 mA
+const float NOISE_SENSOR_POWER_CONSUMPTION = 0.02; // 20 mA
+const float FIRE_SENSOR_POWER_CONSUMPTION = 0.02; // 20 mA
+const float SERVO_POWER_CONSUMPTION = 0.15; // 150 mA
+const float M1_POWER_CONSUMPTION = 0.200; // MOTOR 1
+
 const char correct_PIN[] = "1818";
 char entered_PIN[5];   // 4 chars + '\0'
 byte pinndex = 0;

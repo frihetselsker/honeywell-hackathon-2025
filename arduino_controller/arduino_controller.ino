@@ -23,7 +23,7 @@ enum MenuState {
   ControlCooler,
   ControlWindow,
   ControlBuzzer,
-  AlertState
+  MenuAlertState // Renamed to avoid conflict with State::AlertState
 };
 
 const char* menuItems[] = {
@@ -112,7 +112,7 @@ COROUTINE(passwordTask) {
               } else {
                 passwordAttempts++;
                 if (passwordAttempts >= 3) {
-                  menuState = AlertState;
+                  menuState = MenuAlertState; // Use new enum value
                   COROUTINE_DELAY(200);
                   break;
                 }
@@ -158,7 +158,7 @@ COROUTINE(menuTask) {
     if (menuState == PasswordState) {
       // Block menu until passwordTask completes
       COROUTINE_YIELD();
-    } else if (menuState == AlertState) {
+    } else if (menuState == MenuAlertState) { // Use new enum value
       // Alert: Buzzer, Red LED, show alert message
       state = AlertState;
       lcd.clear();

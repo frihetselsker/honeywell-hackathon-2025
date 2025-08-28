@@ -22,8 +22,8 @@ COROUTINE(gasTask) {
   COROUTINE_LOOP() {
     gasValue = readGas();
     COROUTINE_DELAY(200);
-    // Serial.print("Gas: ");
-    // Serial.println(gasValue);
+    Serial.print("Gas: ");
+    Serial.println(gasValue);
     COROUTINE_YIELD();
   }
 }
@@ -133,10 +133,10 @@ COROUTINE(DHTTask) {
     tempValue = readTemperature();
     humValue = readHumidity();
     COROUTINE_DELAY(300);
-    // Serial.print("Temeperature: ");
-    // Serial.print(tempValue, 2);
-    // Serial.print("Humidity: ");
-    // Serial.println(humValue, 2);
+    Serial.print("Temeperature: ");
+    Serial.print(tempValue, 2);
+    Serial.print("Humidity: ");
+    Serial.println(humValue, 2);
     COROUTINE_YIELD();
   }
 }
@@ -155,11 +155,44 @@ COROUTINE(coolerTask) {
 
 COROUTINE(windowTask) {
   COROUTINE_LOOP() {
-    if (gasValue > 100 || humValue > 70.0) {
-      onWindow();
+    // Hysteresis thresholds
+    const int gasOpenThreshold = 100;
+    const int gasCloseThreshold = 90;
+    const float humOpenThreshold = 70.0;
+    const float humCloseThreshold = 65.0;
+    static unsigned long lastChangeTime = 0;
+    const unsigned long debounceTime = 2000; // 2 seconds
+
+    // Track why the window was opened: 0 = closed, 1 = gas, 2 = humidity
+    static int windowOpenReason = 0;
+
+    Serial.println("At window");
+    Serial.println(is_window_open);
+
+    if (!is_window_open) {
+      // Only open if either gas or humidity exceeds open thresholds for debounceTime
+      if ((gasValue > gasOpenThreshold || humValue > humOpenThreshold) && (millis() - lastChangeTime > debounceTime)) {
+        if (gasValue > gasOpenThreshold) {
+          windowOpenReason = 1;
+        } else if (humValue > humOpenThreshold) {
+          windowOpenReason = 2;
+        }
+        onWindow();
+        lastChangeTime = millis();
+      }
     } else {
-      offWindow();
+      // Only close if the reason for opening is resolved for debounceTime
+      if (windowOpenReason == 1 && gasValue < gasCloseThreshold && (millis() - lastChangeTime > debounceTime)) {
+        offWindow();
+        windowOpenReason = 0;
+        lastChangeTime = millis();
+      } else if (windowOpenReason == 2 && humValue < humCloseThreshold && (millis() - lastChangeTime > debounceTime)) {
+        offWindow();
+        windowOpenReason = 0;
+        lastChangeTime = millis();
+      }
     }
+
     COROUTINE_DELAY(200);
     COROUTINE_YIELD();
   }
@@ -213,13 +246,17 @@ void setup() {
   initComms();
   initSensors();
   initBuzzer();
+
+  toggleWindow();
+  delay(2000);
+  toggleWindow();
   
-  // Serial.print(",WINDOW:");
-  // Serial.print(is_window_open);
-  // Serial.print(",COOLER:");
-  // Serial.print(is_cooler_on);
-  // Serial.print(",BUZZER:");
-  // Serial.print(is_buzzer_on);
+  Serial.print(",WINDOW:");
+  Serial.print(is_window_open);
+  Serial.print(",COOLER:");
+  Serial.print(is_cooler_on);
+  Serial.print(",BUZZER:");
+  Serial.print(is_buzzer_on);
   CoroutineScheduler::setup();
 }
 
