@@ -51,13 +51,21 @@ COROUTINE(powerTask) {
   }
 }
 
-// COROUTINE(botTask) {
-//   COROUTINE_LOOP() {
-//     // Simulate bot behavior
-//     Serial.println("Bot is active");
-//     COROUTINE_DELAY(5000); // Update every 5 seconds
-//   }
-// }
+COROUTINE(botTask) {
+  COROUTINE_LOOP() {
+    // Check if there is input from Serial
+    if (Serial.available() > 0) {
+      String cmd = Serial.readStringUntil('\n');
+      cmd.trim();
+      if (cmd == "TOGGLE_WINDOW" || cmd == "TOGGLE_BUZZER" || cmd == "TOGGLE_COOLER") {
+        link.println(cmd);
+        Serial.print("Forwarded to link: ");
+        Serial.println(cmd);
+      }
+    }
+    COROUTINE_DELAY(50); // Polling rate
+  }
+}
 
 COROUTINE(passwordTask) {
   COROUTINE_LOOP() {
