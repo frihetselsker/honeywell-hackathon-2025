@@ -1,3 +1,44 @@
+# --- Telegram command polling ---
+def get_updates(offset=None):
+    url = f"https://api.telegram.org/bot{TOKEN}/getUpdates"
+    params = {"timeout": 5, "allowed_updates": ["message"]}
+    if offset:
+        params["offset"] = offset
+    try:
+        resp = requests.get(url, params=params, timeout=8)
+        if resp.status_code == 200:
+            return resp.json().get("result", [])
+    except Exception as e:
+        print(f"[TG poll] {e}")
+    return []
+
+def handle_command(cmd, ser):
+    cmd = cmd.lower()
+    if cmd == "/data":
+        # Send last known data
+        msg = f"Last data: {latest_metrics}\nPower: {latest_power_usage_w} W" if latest_metrics else "No data yet."
+        send(msg)
+    elif cmd == "/buzzer":
+        try:
+            ser.write(b"TOGGLE_BUZZER\n")
+            send("Buzzer toggle command sent.")
+        except Exception as e:
+            send(f"Failed to send: {e}")
+    elif cmd == "/window":
+        try:
+            ser.write(b"TOGGLE_WINDOW\n")
+            send("Window toggle command sent.")
+        except Exception as e:
+            send(f"Failed to send: {e}")
+    elif cmd == "/cooler":
+        try:
+            ser.write(b"TOGGLE_COOLER\n")
+            send("Cooler toggle command sent.")
+        except Exception as e:
+            send(f"Failed to send: {e}")
+    else:
+        send("Unknown command. Available: /data, /buzzer, /window, /cooler")
+
 # monitor_serial_and_notify.py
 import os, sys, time, math
 import requests
@@ -170,8 +211,20 @@ def main():
     st = AlertState()
     first_payload_sent = False
 
+
     try:
+        last_update_id = None
         while True:
+            # --- Handle Telegram commands ---
+            updates = get_updates(last_update_id)
+            for upd in updates:
+                last_update_id = upd["update_id"] + 1
+                msg = upd.get("message", {})
+                text = msg.get("text", "")
+                if text.startswith("/"):
+                    handle_command(text, ser)
+
+            # --- Serial read as before ---
             raw = ser.readline()
             if not raw:
                 continue
@@ -184,7 +237,6 @@ def main():
             # Check for power usage string
             if line.startswith("Estimated power usage:"):
                 try:
-                    # Example: 'Estimated power usage: 5.25 W' (may have non-breaking space)
                     import re
                     m = re.search(r"Estimated power usage:\s*([\d.]+)", line)
                     if m:
